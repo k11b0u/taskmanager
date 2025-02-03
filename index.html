@@ -114,6 +114,21 @@
     .login-form input {
       flex: 2;
     }
+    .taskInput{
+      width: 100%;
+    }
+    /* ポップアップのcss */
+    .modal {
+      display: none; 
+      position: fixed; 
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff; 
+      padding: 20px; 
+      border-radius: 8px; 
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      z-index: 2000;
+    }
   </style>
 </head>
 <body>
@@ -121,11 +136,12 @@
   <div class="container">
     <div class="login-form">
       <input type="text" id="username" placeholder="ユーザー名を入力">
-      <button onclick="login()">ログイン</button>
+      <button onclick="login()" id="login_button">ログイン</button>
+      <button id="logoutButton" style="display: none;" onclick="logout()">ログアウト</button>
     </div>
-    <button id="logoutButton" style="display: none;" onclick="logout()">ログアウト</button>
+    <textarea id="taskInput" class="taskInput" rows="3" placeholder="新しいタスクを入力"></textarea>
+
     <div class="task-input">
-      <input type="text" id="taskInput" placeholder="新しいタスクを入力">
       <select id="priority">
         <option value="High">高</option>
         <option value="Medium">中</option>
@@ -141,8 +157,19 @@
     <img src="animal_penguin_baby.png" alt="Avatar"> 
     <p id="avatarMessage">すごい！よくやった！</p>
   </div>
-
+  <div id="editModal" class="modal">
+    <h2>タスク編集</h2>
+    <input type="text" id="editText">
+    <input type="date" id="editDeadline">
+    <select id="editPriority">
+      <option value="High">高</option>
+      <option value="Medium">中</option>
+      <option value="Low">低</option>
+    </select>
+    <button onclick="saveEditedTask()">保存</button>
+  </div>
   <script>
+    let editTaskId = null;
     let tasks = JSON.parse(localStorage.getItem('tasks')) || {};
     let currentUser = localStorage.getItem('currentUser') || null;
 
@@ -172,7 +199,11 @@
         saveTasks();
         renderTasks();
         document.getElementById('logoutButton').style.display = 'inline-block'; 
+        document.getElementById('login_button').style.display = 'none';
         alert(`${currentUser}としてログインしました`);
+        renderTasks();
+      }else{
+        alert('ユーザー名を入力してください');
       }
     }
 
@@ -183,6 +214,8 @@
       document.getElementById('logoutButton').style.display = 'none';  
       renderTasks();  
       alert('ログアウトしました');
+      document.getElementById('login_button').style.display = 'inline-block';
+      document.getElementById('taskList').innerHTML = '';
     }
 
     function addTask() {
@@ -231,20 +264,25 @@
 
     function editTask(id) {
       const task = tasks[currentUser].find(task => task.id === id);
-      const newText = prompt('タスクを編集', task.text);
-      if (newText !== null) {
-        task.text = newText.trim();
-      }
-      const newDeadline = prompt('期限を編集 (YYYY-MM-DD)', task.deadline);
-      if (newDeadline !== null) {
+      editTaskId = id;
+      document.getElementById('editText').value = task.text;
+      document.getElementById('editDeadline').value = task.deadline;
+      document.getElementById('editPriority').value = task.priority;
+      document.getElementById('editModal').style.display = 'block';
+    }
+    function saveEditedTask() {
+      const newText = document.getElementById('editText').value.trim();
+      const newDeadline = document.getElementById('editDeadline').value;
+      const newPriority = document.getElementById('editPriority').value;
+      if (editTaskId !== null) {
+        const task = tasks[currentUser].find(task => task.id === editTaskId);
+        task.text = newText;
         task.deadline = newDeadline;
+        task.priority = newPriority;
+        saveTasks();
+        renderTasks();
+        document.getElementById('editModal').style.display = 'none';
       }
-      const newPriority = prompt('優先度を編集 (High/Medium/Low)', task.priority);
-      if (newPriority !== null) {
-        task.priority = newPriority.trim();
-      }
-      saveTasks();
-      renderTasks();
     }
 
     function saveTasks() {
