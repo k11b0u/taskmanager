@@ -143,8 +143,8 @@
   </div>
 
   <script>
-    let tasks = {};
-    let currentUser = null;
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || {};
+    let currentUser = localStorage.getItem('currentUser') || null;
 
     const praiseMessages = [
       "すごい！よくやった！",
@@ -165,6 +165,7 @@
       const username = document.getElementById('username').value.trim();
       if (username) {
         currentUser = username;
+        localStorage.setItem('currentUser', currentUser);
         if (!tasks[currentUser]) {
           tasks[currentUser] = [];
         }
@@ -177,6 +178,7 @@
 
     function logout() {
       currentUser = null;
+      localStorage.removeItem('currentUser');
       document.getElementById('username').value = '';  
       document.getElementById('logoutButton').style.display = 'none';  
       renderTasks();  
@@ -259,37 +261,37 @@
         li.className = `${task.completed ? 'completed' : ''} ${isUrgent(task.deadline) ? 'urgent' : ''} ${task.priority.toLowerCase()}`;
         li.innerHTML = `
           <span>${task.text} <em>(${task.priority})</em> 
-          ${task.deadline ? ` - 期限: ${task.deadline}` : ''}</span>
-          <div>
-            <button onclick="toggleComplete(${task.id})">
-              ${task.completed ? 'やり直す' : '完了'}
-            </button>
-            <button onclick="editTask(${task.id})">編集</button>
-            <button onclick="removeTask(${task.id})">削除</button>
-          </div>
+          ${task.deadline ? `- 期限: ${task.deadline}` : ''}
+          </span>
+          <button onclick="toggleComplete(${task.id})">完了</button>
+          <button onclick="removeTask(${task.id})">削除</button>
+          <button onclick="editTask(${task.id})">編集</button>
         `;
         taskList.appendChild(li);
       });
     }
 
-    function showAvatar() {
-      const avatar = document.getElementById('avatar');
-      const message = document.getElementById('avatarMessage');
-      message.textContent = getRandomPraiseMessage();  
-      avatar.style.display = 'flex'; 
-      setTimeout(() => {
-        avatar.style.display = 'none';  
-      }, 5000);
-    }
-
     function isUrgent(deadline) {
       if (!deadline) return false;
       const today = new Date();
-      const dueDate = new Date(deadline);
-      return (dueDate - today) <= 3 * 24 * 60 * 60 * 1000; 
+      const taskDeadline = new Date(deadline);
+      return taskDeadline <= today;
     }
 
-    renderTasks();
+    function showAvatar() {
+      const avatar = document.getElementById('avatar');
+      const avatarMessage = document.getElementById('avatarMessage');
+      avatarMessage.textContent = getRandomPraiseMessage();
+      avatar.style.display = 'block';
+      setTimeout(() => avatar.style.display = 'none', 3000);
+    }
+
+    window.onload = () => {
+      if (currentUser) {
+        renderTasks();
+      }
+    };
   </script>
 </body>
 </html>
+
