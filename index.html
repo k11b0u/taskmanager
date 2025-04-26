@@ -1,335 +1,517 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>タスクマネージャー</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>進化アバタータスクマネージャー</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
   <style>
+    * { box-sizing: border-box; }
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Noto Sans JP', sans-serif;
       margin: 0;
-      padding: 20px;
-      background-color: #f4f4f4;
+      padding: 0;
+      background: linear-gradient(120deg, #fce3ec, #f9f9f9);
+      min-height: 100vh;
     }
-    h1, h2 {
+    h1 {
       text-align: center;
+      margin-top: 30px;
+      font-size: 2rem;
+      color: #333;
     }
     .container {
-      max-width: 500px;
-      margin: 0 auto;
-      background: #fff;
+      max-width: 600px;
+      margin: 20px auto;
+      background: white;
       padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     }
-    .task-input, .login-form {
+    .login-form, .task-input, .filters {
       display: flex;
-      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 15px;
     }
-    .task-input input, .login-form input, .task-input select {
+    input[type="text"], input[type="date"], select {
       flex: 1;
       padding: 10px;
-      margin-right: 10px;
       border: 1px solid #ccc;
-      border-radius: 4px;
+      border-radius: 8px;
+      font-size: 14px;
     }
     button {
-      padding: 10px 15px;
-      border: none;
-      background-color: #28a745;
+      background: linear-gradient(135deg, #4CAF50, #2e7d32);
       color: white;
-      border-radius: 4px;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-weight: bold;
       cursor: pointer;
+      transition: background 0.3s;
     }
     button:hover {
-      background-color: #218838;
+      background: linear-gradient(135deg, #66bb6a, #388e3c);
     }
     .task-list {
       list-style: none;
       padding: 0;
     }
     .task-list li {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      padding: 14px 18px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      margin-bottom: 10px;
-      background: #fafafa;
-      transition: background-color 0.3s ease;
-    }
-    .task-list li.urgent {
-      background-color: #ffdddd;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
     .task-list li.completed {
       text-decoration: line-through;
-      color: #aaa;
+      color: #999;
     }
-    .task-list li.high {
-      background-color: #ffd700;
-    }
-    .task-list li.medium {
-      background-color: #ffffe0;
-    }
-    .task-list li.low {
-      background-color: #d3ffd3;
-    }
-    .task-list li button {
-      background-color: #007bff;
-      margin-left: 5px;
-    }
-    .task-list li button:hover {
-      background-color: #0056b3;
-    }
+    .task-list li.urgent { background-color: #ffebee; }
+    .task-list li.high { background-color: #fff9c4; }
+    .task-list li.medium { background-color: #e0f7fa; }
+    .task-list li.low { background-color: #e8f5e9; }
+    .task-list li.today { border-left: 5px solid #2196f3; }
+    .task-list li.expired { border-left: 5px solid #f44336; }
+
     .avatar {
       position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 300px;
-      height: 300px;
-      background-color: #f7e1e1;
-      border-radius: 50%;
+      bottom: 20px;
+      right: 20px;
+      width: 160px;
       text-align: center;
-      padding: 20px;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
       z-index: 1000;
     }
     .avatar img {
-      width: 100px;
-      height: 100px;
-    }
-    .avatar p {
-      margin-top: 20px;
-      font-size: 24px;
-      font-weight: bold;
-      color: #333;
-    }
-    .task-input select,
-    .login-form input {
-      flex: 2;
-    }
-    .taskInput{
       width: 100%;
+      border-radius: 50%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      transition: transform 0.3s ease;
     }
-    /* ポップアップのcss */
-    .modal {
-      display: none; 
-      position: fixed; 
-      top: 50%; left: 50%;
+    .avatar img.animate { animation: bounce 0.6s ease; }
+    @keyframes bounce {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+
+    .speech-bubble {
+      position: absolute;
+      bottom: 180px;
+      right: 0;
+      background: #ffffff;
+      padding: 12px 18px;
+      border-radius: 1rem;
+      font-size: 14px;
+      color: #333;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      display: none;
+    }
+
+    .next-level-info, .current-point {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #555;
+      background: rgba(255,255,255,0.8);
+      padding: 4px 8px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    #levelUpBanner {
+      position: fixed;
+      top: 40%;
+      left: 50%;
       transform: translate(-50%, -50%);
-      background: #fff; 
-      padding: 20px; 
-      border-radius: 8px; 
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
-      z-index: 2000;
+      background: #fff6d5;
+      color: #ff9800;
+      padding: 20px 40px;
+      font-size: 2rem;
+      font-weight: bold;
+      border-radius: 16px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+      animation: fadeInOut 2s ease;
+      z-index: 9999;
+      display: none;
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+      20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      80% { opacity: 1; }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); }
+    }
+
+    .user-status {
+      text-align: right;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .editable-field {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 14px;
+      width: auto;
+    }
+
+    @media (max-width: 600px) {
+      .container { margin: 10px; padding: 15px; }
+      button { width: 100%; }
+      .login-form, .task-input, .filters {
+        flex-direction: column;
+      }
+      .task-list li {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
   </style>
 </head>
 <body>
   <h1>タスクマネージャー</h1>
+
   <div class="container">
-    <div class="login-form">
-      <input type="text" id="username" placeholder="ユーザー名を入力">
-      <button onclick="login()" id="login_button">ログイン</button>
-      <button id="logoutButton" style="display: none;" onclick="logout()">ログアウト</button>
+    <div id="userStatus" class="user-status"></div>
+
+    <div class="login-form" id="loginForm">
+      <input type="text" id="username" placeholder="ユーザー名を入力" />
+      <button onclick="login()">ログイン</button>
     </div>
-    <textarea id="taskInput" class="taskInput" rows="3" placeholder="新しいタスクを入力"></textarea>
+
+    <div class="filters">
+      <button onclick="setFilter('all')">すべて</button>
+      <button onclick="setFilter('active')">未完了</button>
+      <button onclick="setFilter('completed')">完了</button>
+      <select id="sortSelect" onchange="renderTasks()">
+        <option value="default">並び替えなし</option>
+        <option value="priority">優先度順</option>
+        <option value="deadline">期限順</option>
+      </select>
+    </div>
 
     <div class="task-input">
+      <input type="text" id="taskInput" placeholder="新しいタスクを入力" />
       <select id="priority">
         <option value="High">高</option>
         <option value="Medium">中</option>
         <option value="Low">低</option>
       </select>
-      <input type="date" id="deadline">
+      <input type="date" id="deadline" />
       <button onclick="addTask()">追加</button>
     </div>
+
     <ul id="taskList" class="task-list"></ul>
   </div>
 
-  <div id="avatar" class="avatar" style="display: none;">
-    <img src="animal_penguin_baby.png" alt="Avatar"> 
-    <p id="avatarMessage">すごい！よくやった！</p>
+  <div id="avatar" class="avatar">
+    <img src="char1_lv0.png" alt="Avatar" />
+    <div id="avatarMessage" class="speech-bubble">よくできました！</div>
+    <div id="currentPoint" class="current-point">現在のポイント：0</div>
+    <div id="nextLevel" class="next-level-info">あと◯ポイントで進化！</div>
   </div>
-  <div id="editModal" class="modal">
-    <h2>タスク編集</h2>
-    <input type="text" id="editText">
-    <input type="date" id="editDeadline">
-    <select id="editPriority">
-      <option value="High">高</option>
-      <option value="Medium">中</option>
-      <option value="Low">低</option>
-    </select>
-    <button onclick="saveEditedTask()">保存</button>
-  </div>
+
+  <div id="levelUpBanner">LEVEL UP!! 🎉</div>
   <script>
-    let editTaskId = null;
-    let tasks = JSON.parse(localStorage.getItem('tasks')) || {};
-    let currentUser = localStorage.getItem('currentUser') || null;
-
-    const praiseMessages = [
-      "すごい！よくやった！",
-      "素晴らしい！完璧だね！",
-      "すごい進歩！自信を持って！",
-      "よく頑張ったね！その調子！",
-      "素敵！次も頑張ろう！",
-      "完了！お疲れさま！あなたはすごい！",
-      "すばらしい！もう一息！"
-    ];
-
-    function getRandomPraiseMessage() {
-      const randomIndex = Math.floor(Math.random() * praiseMessages.length);
-      return praiseMessages[randomIndex];
+    let tasks = {};
+    let currentUser = null;
+    let userPoints = {};
+    let previousLevel = 0;
+    let currentFilter = 'all';
+    
+    const praiseMessages = ["よくできました！", "素晴らしい！", "ナイス！", "その調子！"];
+    
+    const getCurrentMonthKey = () => {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    };
+    
+    function getRandomCharacter() {
+      const characters = ['char1', 'char2', 'char3'];
+      return characters[Math.floor(Math.random() * characters.length)];
     }
-
+    
+    function assignMonthlyCharacter() {
+      const key = `character_${currentUser}_${getCurrentMonthKey()}`;
+      let character = localStorage.getItem(key);
+      if (!character) {
+        character = getRandomCharacter();
+        localStorage.setItem(key, character);
+      }
+      return character;
+    }
+    
+    function getRandomPraiseMessage() {
+      return praiseMessages[Math.floor(Math.random() * praiseMessages.length)];
+    }
+    
     function login() {
       const username = document.getElementById('username').value.trim();
-      if (username) {
-        currentUser = username;
-        localStorage.setItem('currentUser', currentUser);
-        if (!tasks[currentUser]) {
-          tasks[currentUser] = [];
-        }
-        saveTasks();
-        renderTasks();
-        document.getElementById('logoutButton').style.display = 'inline-block'; 
-        document.getElementById('login_button').style.display = 'none';
-        alert(`${currentUser}としてログインしました`);
-        renderTasks();
-      }else{
-        alert('ユーザー名を入力してください');
+      if (!username) return;
+      currentUser = username;
+      if (!tasks[currentUser]) tasks[currentUser] = [];
+      saveTasks();
+      loadPoints();
+      updateAvatar();
+      renderTasks();
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('userStatus').textContent = `ログイン中：${currentUser}`;
+    
+      const history = JSON.parse(localStorage.getItem(`evolution_history_${currentUser}`)) || {};
+      console.log("📘進化履歴:");
+      for (const [month, data] of Object.entries(history)) {
+        console.log(`${month} → ${data.character} (Lv${data.level})`);
       }
+    
+      document.getElementById('taskInput').addEventListener('keydown', e => {
+        if (e.key === "Enter") addTask();
+      });
     }
-
-    function logout() {
-      currentUser = null;
-      localStorage.removeItem('currentUser');
-      document.getElementById('username').value = '';  
-      document.getElementById('logoutButton').style.display = 'none';  
-      renderTasks();  
-      alert('ログアウトしました');
-      document.getElementById('login_button').style.display = 'inline-block';
-      document.getElementById('taskList').innerHTML = '';
+    
+    function setFilter(filter) {
+      currentFilter = filter;
+      renderTasks();
     }
-
+    
     function addTask() {
-      if (!currentUser) {
-        alert('まずログインしてください');
-        return;
-      }
-
+      if (!currentUser) return alert("ログインしてください");
       const taskInput = document.getElementById('taskInput');
       const priority = document.getElementById('priority');
       const deadline = document.getElementById('deadline');
       const taskValue = taskInput.value.trim();
-
-      if (taskValue) {
-        const task = {
-          id: Date.now(),
-          text: taskValue,
-          priority: priority.value,
-          deadline: deadline.value,
-          completed: false
-        };
-        tasks[currentUser].push(task);
-        saveTasks();
-        renderTasks();
-        taskInput.value = '';
-        deadline.value = '';
-      }
+      if (!taskValue) return;
+    
+      const task = {
+        id: Date.now(),
+        text: taskValue,
+        priority: priority.value,
+        deadline: deadline.value,
+        completed: false
+      };
+      tasks[currentUser].push(task);
+      saveTasks();
+      renderTasks();
+      taskInput.value = '';
+      deadline.value = '';
     }
-
+    
     function removeTask(id) {
       tasks[currentUser] = tasks[currentUser].filter(task => task.id !== id);
       saveTasks();
       renderTasks();
     }
-
+    
     function toggleComplete(id) {
       const task = tasks[currentUser].find(task => task.id === id);
       task.completed = !task.completed;
       saveTasks();
       renderTasks();
-
       if (task.completed) {
+        addPointsForTask(task);
         showAvatar();
       }
     }
-
-    function editTask(id) {
-      const task = tasks[currentUser].find(task => task.id === id);
-      editTaskId = id;
-      document.getElementById('editText').value = task.text;
-      document.getElementById('editDeadline').value = task.deadline;
-      document.getElementById('editPriority').value = task.priority;
-      document.getElementById('editModal').style.display = 'block';
+    
+    function addPointsForTask(task) {
+      if (!userPoints[currentUser]) userPoints[currentUser] = 0;
+      let point = 1;
+      if (task.priority === "High") point = 3;
+      else if (task.priority === "Medium") point = 2;
+      userPoints[currentUser] += point;
+      savePoints();
+      updateAvatar();
+      animateAvatar();
     }
-    function saveEditedTask() {
-      const newText = document.getElementById('editText').value.trim();
-      const newDeadline = document.getElementById('editDeadline').value;
-      const newPriority = document.getElementById('editPriority').value;
-      if (editTaskId !== null) {
-        const task = tasks[currentUser].find(task => task.id === editTaskId);
-        task.text = newText;
-        task.deadline = newDeadline;
-        task.priority = newPriority;
-        saveTasks();
-        renderTasks();
-        document.getElementById('editModal').style.display = 'none';
+    
+    function animateAvatar() {
+      const avatarImg = document.querySelector('.avatar img');
+      avatarImg.classList.add('animate');
+      setTimeout(() => {
+        avatarImg.classList.remove('animate');
+      }, 600);
+    }
+    
+    function showLevelUp() {
+      const banner = document.getElementById("levelUpBanner");
+      banner.style.display = "block";
+      setTimeout(() => {
+        banner.style.display = "none";
+      }, 2000);
+    }
+    
+    function updateAvatar() {
+      const avatarImg = document.querySelector('.avatar img');
+      const nextLevelText = document.getElementById('nextLevel');
+      const pointText = document.getElementById('currentPoint');
+      const points = userPoints[currentUser] || 0;
+    
+      pointText.textContent = `現在のポイント：${points}`;
+    
+      let level = 0;
+      if (points >= 70) level = 3;
+      else if (points >= 30) level = 2;
+      else if (points >= 10) level = 1;
+    
+      const character = assignMonthlyCharacter();
+      avatarImg.src = `${character}_lv${level}.png`;
+    
+      if (level > previousLevel) showLevelUp();
+      previousLevel = level;
+    
+      if (level === 3) {
+        nextLevelText.textContent = "MAXレベルです🎉";
+      } else {
+        const thresholds = [10, 30, 70];
+        const nextThreshold = thresholds[level];
+        const remain = nextThreshold - points;
+        nextLevelText.textContent = `あと ${remain} ポイントで進化！`;
       }
+    
+      const historyKey = `evolution_history_${currentUser}`;
+      let history = JSON.parse(localStorage.getItem(historyKey)) || {};
+      history[getCurrentMonthKey()] = { character, level };
+      localStorage.setItem(historyKey, JSON.stringify(history));
     }
-
+    
+    function savePoints() {
+      localStorage.setItem("points", JSON.stringify(userPoints));
+    }
+    
+    function loadPoints() {
+      const data = localStorage.getItem("points");
+      if (data) userPoints = JSON.parse(data);
+    }
+    
     function saveTasks() {
-      localStorage.setItem('tasks', JSON.stringify(tasks));
+      localStorage.setItem("tasks", JSON.stringify(tasks));
     }
-
+    
     function renderTasks() {
       if (!currentUser) return;
-
       const taskList = document.getElementById('taskList');
       taskList.innerHTML = '';
-      tasks[currentUser].forEach(task => {
+      let filteredTasks = [...tasks[currentUser]];
+    
+      if (currentFilter === 'active') {
+        filteredTasks = filteredTasks.filter(t => !t.completed);
+      } else if (currentFilter === 'completed') {
+        filteredTasks = filteredTasks.filter(t => t.completed);
+      }
+    
+      const sort = document.getElementById('sortSelect').value;
+      if (sort === 'priority') {
+        const priorityMap = { High: 1, Medium: 2, Low: 3 };
+        filteredTasks.sort((a, b) => priorityMap[a.priority] - priorityMap[b.priority]);
+      } else if (sort === 'deadline') {
+        filteredTasks.sort((a, b) => new Date(a.deadline || '9999-12-31') - new Date(b.deadline || '9999-12-31'));
+      }
+    
+      filteredTasks.forEach(task => {
         const li = document.createElement('li');
-        li.className = `${task.completed ? 'completed' : ''} ${isUrgent(task.deadline) ? 'urgent' : ''} ${task.priority.toLowerCase()}`;
-        li.innerHTML = `
-          <span>${task.text} <em>(${task.priority})</em> 
-          ${task.deadline ? `- 期限: ${task.deadline}` : ''}
-          </span>
-          <button onclick="toggleComplete(${task.id})">完了</button>
+        const today = new Date().toISOString().split('T')[0];
+        const isExpired = task.deadline && task.deadline < today;
+        const isToday = task.deadline === today;
+    
+        li.className = `${task.completed ? 'completed' : ''} ${isExpired ? 'expired' : ''} ${isToday ? 'today' : ''} ${task.priority.toLowerCase()}`;
+    
+        const span = document.createElement('span');
+        span.innerHTML = `<strong>${task.text}</strong> `;
+    
+        const prioritySpan = document.createElement('span');
+        prioritySpan.textContent = `(${task.priority})`;
+        prioritySpan.style.marginLeft = '5px';
+    
+        const deadlineSpan = document.createElement('span');
+        if (task.deadline) deadlineSpan.textContent = ` - 期限: ${task.deadline}`;
+        deadlineSpan.style.marginLeft = '5px';
+    
+        // インライン編集イベント追加
+        span.style.cursor = prioritySpan.style.cursor = deadlineSpan.style.cursor = 'pointer';
+        span.title = "クリックで編集";
+        prioritySpan.title = "クリックで編集";
+        deadlineSpan.title = "クリックで編集";
+    
+        span.addEventListener("click", () => makeEditable(task, "text", span));
+        prioritySpan.addEventListener("click", () => makeEditable(task, "priority", prioritySpan));
+        deadlineSpan.addEventListener("click", () => makeEditable(task, "deadline", deadlineSpan));
+    
+        const left = document.createElement('div');
+        left.appendChild(span);
+        left.appendChild(prioritySpan);
+        left.appendChild(deadlineSpan);
+    
+        const right = document.createElement('div');
+        right.innerHTML = `
+          <button onclick="toggleComplete(${task.id})">${task.completed ? 'やり直す' : '完了'}</button>
           <button onclick="removeTask(${task.id})">削除</button>
-          <button onclick="editTask(${task.id})">編集</button>
         `;
+    
+        li.appendChild(left);
+        li.appendChild(right);
         taskList.appendChild(li);
       });
     }
-
-    function isUrgent(deadline) {
-      if (!deadline) return false;
-      const today = new Date();
-      const taskDeadline = new Date(deadline);
-      return taskDeadline <= today;
-    }
-
-    function showAvatar() {
-      const avatar = document.getElementById('avatar');
-      const avatarMessage = document.getElementById('avatarMessage');
-      avatarMessage.textContent = getRandomPraiseMessage();
-      avatar.style.display = 'block';
-      setTimeout(() => avatar.style.display = 'none', 3000);
-    }
-
-    window.onload = () => {
-      if (currentUser) {
+    
+    function makeEditable(task, field, element) {
+      const input = field === "priority"
+        ? document.createElement("select")
+        : document.createElement("input");
+    
+      if (field === "priority") {
+        ["High", "Medium", "Low"].forEach(p => {
+          const opt = document.createElement("option");
+          opt.value = p;
+          opt.text = p;
+          if (p === task.priority) opt.selected = true;
+          input.appendChild(opt);
+        });
+      } else if (field === "deadline") {
+        input.type = "date";
+        input.value = task.deadline || "";
+      } else {
+        input.type = "text";
+        input.value = task.text;
+      }
+    
+      input.className = "editable-field";
+      element.replaceWith(input);
+      input.focus();
+    
+      input.addEventListener("blur", saveEdit);
+      input.addEventListener("keydown", e => {
+        if (e.key === "Enter") saveEdit();
+      });
+    
+      function saveEdit() {
+        if (field === "priority") task.priority = input.value;
+        else if (field === "deadline") task.deadline = input.value;
+        else task.text = input.value.trim();
+    
+        saveTasks();
         renderTasks();
       }
-    };
-  </script>
-</body>
-</html>
-
+    }
+    
+    function showAvatar() {
+      const message = document.getElementById('avatarMessage');
+      message.textContent = getRandomPraiseMessage();
+      message.style.display = 'block';
+      setTimeout(() => {
+        message.style.display = 'none';
+      }, 4000);
+    }
+    
+    renderTasks();
+    </script>
+    </body>
+    </html>
+    
